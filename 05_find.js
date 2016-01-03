@@ -35,6 +35,20 @@ data = data
 
     teacher.schedule = daysTimes;
 
+    var rates = teacher.lessons.map(function(lesson) { return lesson.price; });
+    rates = rates.sort(function(a, b) { return a-b; });
+    var median = (function(arr) {
+      var mid = Math.ceil(arr.length / 2);
+      if (arr.length % 2 === 0) {
+        return (arr[mid-1] + arr[mid]) / 2;
+      } else {
+        return arr[mid-1];
+      }
+    })(rates);
+
+    teacher.rates = rates;
+    teacher.median = median;
+
     return teacher;
   });
 
@@ -46,13 +60,13 @@ function filterTeachers(data, day, time, preffered, banned) {
     });
 
   function sorter(a, b) {
-    var rateA = Array.isArray(a.hourlyRate) ? a.hourlyRate[0] : a.hourlyRate;
-    var rateB = Array.isArray(b.hourlyRate) ? b.hourlyRate[0] : b.hourlyRate;
+    var rateA = a.score;
+    var rateB = b.score;
 
     if (rateA === rateB) {
       return b.sessions - a.sessions;
     } else {
-      return rateA - rateB;
+      return rateB - rateA;
     }
   }
 
@@ -66,7 +80,7 @@ function filterTeachers(data, day, time, preffered, banned) {
 
   return data
     .filter(function(teacher) {
-      return banned.indexOf(teacher.id) === -1;
+      return banned.indexOf(Number(teacher.id)) === -1;
     })
     .filter(function(teacher) {
       return !!teacher.video;
@@ -74,28 +88,51 @@ function filterTeachers(data, day, time, preffered, banned) {
     .filter(function(teacher) {
       return teacher.sessions > 10;
     })
-    .filter(function(teacher) {
-      var rate = Array.isArray(teacher.hourlyRate) ? teacher.hourlyRate[0] : teacher.hourlyRate;
-      return rate < 150;
+    .map(function(teacher, index, allTeachers) {
+      var maxRate = allTeachers.reduce(function(maxRate, teacher) {
+          return maxRate > teacher.median ? maxRate : teacher.median;
+      }, 0);
+      var minRate = allTeachers.reduce(function(minRate, teacher) {
+          return minRate < teacher.median ? minRate : teacher.median;
+      }, 100000);
+      var maxSessions = allTeachers.reduce(function(maxSessions, teacher) {
+          return maxSessions > teacher.sessions ? maxSessions : teacher.sessions;
+      }, 0);
+      var minSessions = allTeachers.reduce(function(minSessions, teacher) {
+          return minSessions < teacher.sessions ? minSessions : teacher.sessions;
+      }, 100000);
+
+      var rateScore = 1-((teacher.median-minRate) / (maxRate-minRate));
+      var sessionsScore = (teacher.sessions-minSessions) / (maxSessions-minSessions);
+      teacher.score = (rateScore + sessionsScore) / 2;
+
+      return teacher;
     })
     .sort(sorter);
 }
 
 function printTeachers(data) {
   var table = new Table({
-    head: ['Name', 'Country', 'Rate', 'Sessions', 'Video', 'URL', 'id']
+    head: [
+      'Id',
+      'Name',
+      'Video',
+      'URL',
+      'Rates',
+      'Sessions',
+      'Score',
+    ]
   });
 
   data.forEach(function(teacher) {
-    var rate = Array.isArray(teacher.hourlyRate) ? teacher.hourlyRate[0] : teacher.hourlyRate;
     table.push([
+      teacher.id,
       teacher.name,
-      teacher.country,
-      rate,
-      teacher.sessions,
       teacher.video,
       'http://www.italki.com/teacher/' + teacher.id,
-      teacher.id
+      teacher.rates.join(','),
+      teacher.sessions,
+      teacher.score,
     ]);
   });
 
@@ -103,89 +140,42 @@ function printTeachers(data) {
 }
 
 var mySchedule = [
-  ['Monday', '08:30', ['1303245']],
-  ['Tuesday', '08:30', ['1552270']],
-  ['Wednesday', '08:30', ['697166']],
-  ['Thursday', '08:30', ['1328035']],
-  ['Friday', '08:30', ['1637166']],
-  ['Saturday', '19:00', ['1564172']],
-  ['Sunday', '16:30', ['1523529']],
+  //['Monday', '08:30', []],
+  ['Tuesday', '09:30', []],
+  //['Wednesday', '08:30', []],
+  //['Thursday', '08:30', []],
+  //['Friday', '08:30', []],
+  //['Saturday', '19:00', ['1385841']],
+  //['Sunday', '16:30', ['1523529']],
 ];
 
 var banned = [
-  '1002603',
-  '1043829',
-  '1057033',
-  '1078268',
-  '1132229',
-  '1148700',
-  '1175286',
-  '1179674',
-  '1180870',
-  '1278971',
-  '1283664',
-  '1315342',
-  '1322672',
-  '1325926',
-  '1359638',
-  '1360107',
-  '1375760',
-  '1377208',
-  '1377283',
-  '1379413',
-  '1380225',
-  '1390536',
-  '1401711',
-  '1410350',
-  '1413150',
-  '1428018',
-  '1443150',
-  '1459018',
-  '1471244',
-  '1476350',
-  '1486331',
-  '1490474',
-  '1524373',
-  '1526655',
-  '1538587',
-  '1539415',
-  '1539415',
-  '1539688',
-  '1560019',
-  '1565948',
-  '1575655',
-  '1578399',
-  '1581946',
-  '1588399',
-  '1588994',
-  '1589698',
-  '1594374',
-  '1596119',
-  '1600648',
-  '1610322',
-  '1610484',
-  '1646821',
-  '1647456',
-  '1647867',
-  '1676724',
-  '1690250',
-  '1718973',
-  '1733386',
-  '1753811',
-  '1756283',
-  '1789931',
-  '342404',
-  '346460',
-  '795706',
-  '803239',
-  '837815',
-  '899229',
-  '965251',
-  '983529',
+  1539415,
+  939734,
+  1360107,
+  1027407,
+  1304766,
+  1181638,
+  1377208,
+  1851282,
+  1002603,
+  1372321,
+  1807358,
+  1930498,
+  1588399,
+  899229,
+  1723029,
+  1524373,
+  589462,
+  969032,
+  1479603,
+  1588994,
+  1890955,
+  1698850,
+  1179674,
 ];
 
 mySchedule.forEach(function(row) {
   console.log(row[0].toUpperCase(), row[1]);
   printTeachers(filterTeachers(data, row[0], row[1], row[2], banned));
 });
-

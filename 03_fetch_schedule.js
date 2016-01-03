@@ -19,7 +19,7 @@ async.mapSeries(data, function(teacher, callback) {
 
   if (!!teacher.schedule) return ret();
 
-  var cmd = "curl 'https://secure.italki.com/api/get_data_py.aspx?method=GetSchedule&sno=T018220800&tno=" + teacher.scheduleId + "&tz=Russian%20Standard%20Time&lt=2&callback=ITALKI.util.sessiontime.onsuccUT&_=1421929349385' -H 'Pragma: no-cache' -H 'Accept-Encoding: gzip, deflate, sdch' -H 'Accept-Language: en-US,en;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.91 Safari/537.36' -H 'Accept: */*' -H 'Referer: http://www.italki.com/teacher/733564' -H 'Cookie: " + cookies + "' -H 'Connection: keep-alive' -H 'Cache-Control: no-cache' --compressed";
+  var cmd = "curl 'https://secure.italki.com/api/get_data_py.aspx?method=GetSchedule&sno=T018220800&tno=" + teacher.scheduleId + "&tz=Russian%20Standard%20Time&lt=2&callback=ITALKI.util.sessiontime.onsuccUT&_="+(new Date()).getTime()+"' -H 'Pragma: no-cache' -H 'Accept-Encoding: gzip, deflate, sdch' -H 'Accept-Language: en-US,en;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.91 Safari/537.36' -H 'Accept: */*' -H 'Referer: http://www.italki.com/teacher/733564' -H 'Cookie: " + cookies + "' -H 'Connection: keep-alive' -H 'Cache-Control: no-cache' --compressed";
 
   exec(cmd, function(err, js) {
     if (err) return ret();
